@@ -11,7 +11,11 @@ const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 // Q5dgm6z8aOQ3y0GN
 
 app.use(cors({
-  origin: ['http://localhost:5173'],
+  origin: [
+    'http://localhost:5173',
+    'https://job-portal-c6c0d.web.app/',
+    'https://job-portal-c6c0d.firebaseapp.com'
+  ],
   credentials: true
 }));
 app.use(express.json());
@@ -45,9 +49,9 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
+    // await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
 
     const jobsCollection = client.db('JobPortal').collection('jobs')
@@ -61,7 +65,7 @@ async function run() {
       res
         .cookie('token', token, {
           httpOnly: true,
-          secure: false
+          secure: process.env.NODE_ENV === "production",
         })
         .send({ success: true })
     })
@@ -70,7 +74,7 @@ async function run() {
       res
         .clearCookie('token', {
           httpOnly: true,
-          secure: false
+          secure: process.env.NODE_ENV === "production",
         })
         .send({ success: true })
     })
@@ -113,8 +117,8 @@ async function run() {
     app.get('/job-application', verifyToken, async (req, res) => {
       const email = req.query.email;
       const query = { applicant_email: email };
-      if(req.user.email !== req.query.email){
-        return res.status(403).send({message: "access forbiden"})
+      if (req.user.email !== req.query.email) {
+        return res.status(403).send({ message: "access forbiden" })
       }
       const result = await jobApplicationCollection.find(query).toArray();
       res.send(result)
